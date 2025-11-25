@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Copy of Gemini Audiobook Creator",
+  "description": "A powerful document-to-audiobook converter using Gemini 2.5 Flash for text extraction and Gemini TTS for high-quality speech generation.",
+  "requestFramePermissions": []
+}
