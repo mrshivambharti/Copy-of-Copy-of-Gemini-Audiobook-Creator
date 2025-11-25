@@ -1,0 +1,106 @@
+Based on the code provided, your application already includes the features you requested:
+Conversational Hindi: The logic in services/geminiService.ts specifically handles Hindi to ensure it is "conversational, local speakable (Hinglish)" and not formal Shuddh Hindi.
+Voice Selection: Users can select voices (Puck, Charon, Kore, Fenrir, Zephyr) in the UI (App.tsx and constants.ts).
+Preview Button: A "Listen Preview" button is implemented in the 'Review & Config' step.
+Text Cleaning & Chunking: The extraction prompt is robust, and the generateSpeech function splits text into 3000-character chunks to handle large files.
+Warnings: A warning displays for texts over 5000 characters.
+Since the application logic is complete, here is the step-by-step guide to setting this up on a Linux Cloud Server (e.g., AWS EC2, DigitalOcean, Linode, Google Compute Engine).
+Deployment Guide for Linux
+Because this application uses TypeScript (.tsx) and JSX, it cannot be run directly by a browser from a standard web server. You must "build" it into standard JavaScript using a tool like Vite.
+Step 1: Prepare the Linux Server
+Connect to your server via SSH:
+code
+Bash
+ssh user@your-server-ip
+Install Node.js (Required to build the app):
+code
+Bash
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt-get install -y nodejs
+Install Nginx (Web server to serve the app):
+code
+Bash
+sudo apt-get update
+sudo apt-get install -y nginx
+Step 2: Create a Production Project
+Since your current environment is likely a playground (using CDN imports), we need to initialize a standard project structure.
+Create a new Vite project:
+code
+Bash
+npm create vite@latest gemini-audiobook -- --template react-ts
+cd gemini-audiobook
+Install the dependencies:
+code
+Bash
+npm install
+npm install @google/genai
+(Note: You do not need to install react or react-dom separately as the template includes them.)
+Install Tailwind CSS (required for your styling):
+code
+Bash
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+Update tailwind.config.js to scan your files:
+code
+JavaScript
+export default {
+  content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
+  theme: { extend: {} },
+  plugins: [],
+}
+Add Tailwind directives to src/index.css:
+code
+CSS
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+Step 3: Migrate Your Code
+You need to move your existing files into this new folder structure.
+Copy Files:
+Put App.tsx, types.ts, constants.ts inside src/.
+Create folders src/components, src/services, src/utils and copy the respective files into them.
+Update Entry Point:
+Vite uses src/main.tsx instead of index.tsx. Ensure src/main.tsx imports App correctly and mounts it.
+Handle the API Key:
+Vite does not use process.env in the browser.
+Open src/services/geminiService.ts.
+Change: apiKey: process.env.API_KEY
+To: apiKey: import.meta.env.VITE_API_KEY
+Set the Environment Variable:
+Create a file named .env in the root of the project.
+Add: VITE_API_KEY=your_actual_google_api_key_here
+Step 4: Build the Application
+Run the build command to generate the static files (HTML/CSS/JS) that the browser can understand.
+code
+Bash
+npm run build
+This will create a dist/ folder containing your production-ready app.
+Step 5: Configure Nginx to Serve the App
+Move the build files to the web directory:
+code
+Bash
+sudo mkdir -p /var/www/audiobook
+sudo cp -r dist/* /var/www/audiobook/
+Configure Nginx:
+Create a config file: sudo nano /etc/nginx/sites-available/audiobook
+Paste the following:
+code
+Nginx
+server {
+    listen 80;
+    server_name your-domain.com; # Or your server IP
+
+    root /var/www/audiobook;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+Enable the site and restart Nginx:
+code
+Bash
+sudo ln -s /etc/nginx/sites-available/audiobook /etc/nginx/sites-enabled/
+sudo rm /etc/nginx/sites-enabled/default  # Optional: removes default welcome page
+sudo systemctl restart nginx
+Your app is now live!
